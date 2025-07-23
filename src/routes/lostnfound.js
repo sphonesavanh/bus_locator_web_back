@@ -7,10 +7,11 @@ router.post("/", async (req, res) => {
     req.body;
   try {
     const result = await pool.query(
-      `INSERT INTO lost_and_found (route_id, bus_id, user_id, description)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
+      `INSERT INTO lost_and_found (route_id, bus_id, user_id, description, lost_date, status)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
       [route_id, bus_id, user_id, description, lost_date, status]
     );
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -22,8 +23,11 @@ router.get("/", async (req, res) => {
     const result = await pool.query(
       `SELECT
         lf.lost_id,
+        r.route_id,
         r.route_name,
+        b.bus_id,
         b.bus_plate,
+        u.user_id,
         u.user_name,
         u.user_email,
         u.user_tel,
@@ -60,15 +64,22 @@ router.get("/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { route_id, bus_id, user_id, description, lost_date, status } =
-    req.body;
+  const { route_id, bus_id, user_id, description, status } = req.body;
+
   try {
     const result = await pool.query(
       `UPDATE lost_and_found
-       SET route_id = $1, bus_id = $2, user_id = $3, description = $4, lost_date = $5, status = $6
-       WHERE lost_id = $7 RETURNING *`,
-      [route_id, bus_id, user_id, description, lost_date, status, id]
+       SET
+         route_id = COALESCE($1, route_id),
+         bus_id = COALESCE($2, bus_id),
+         user_id = COALESCE($3, user_id),
+         description = COALESCE($4, description),
+         status = COALESCE($5, status)
+       WHERE lost_id = $6
+       RETURNING *`,
+      [route_id, bus_id, user_id, description, status, id]
     );
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Lost item not found" });
     }
@@ -77,6 +88,7 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;

@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
       FROM trip t
       JOIN route r ON t.route_id = r.route_id
       JOIN bus b ON t.bus_id = b.bus_id
-      ORDER BY t.trip_id;
+      ORDER BY t.trip_id DESC;
 `
     );
     res.json(result.rows);

@@ -13,12 +13,12 @@ router.get("/", async (req, res) => {
 
 // CREATE
 router.post("/", async (req, res) => {
-  const { name } = req.body;
+  const { id, name } = req.body;
   console.log("Received: ", req.body);
   try {
     const result = await pool.query(
-      "INSERT INTO route (route_name) VALUES ($1) RETURNING *",
-      [name]
+      "INSERT INTO route (route_id, route_name) VALUES ($1, $2) RETURNING *",
+      [id, name]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -26,14 +26,15 @@ router.post("/", async (req, res) => {
   }
 });
 
+
 // UPDATE
 router.put("/:id", async (req, res) => {
-  const { name } = req.body;
-  const { id } = req.params;
+  const { id: newId, name } = req.body;
+  const { id: oldId } = req.params;
   try {
     await pool.query(
-      "UPDATE route SET route_name = $1 WHERE route_id = $2",
-      [name, id]
+      "UPDATE route SET route_id = $1, route_name = $2 WHERE route_id = $3",
+      [newId, name, oldId]
     );
     res.sendStatus(204);
   } catch (err) {

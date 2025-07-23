@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db/database");
 
-// GET /api/route/:route_id > return coordinates
 router.get("/all", async (req, res) => {
   try {
     const result = await pool.query(

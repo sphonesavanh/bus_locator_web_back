@@ -52,8 +52,28 @@ const getBusIdByDriverId = async (req, res) => {
   }
 }
 
+const updateActiveDriverRoute = async (req, res) => {
+  const { driver_id } = req.params;
+  const { route_id } = req.body;
+  try {
+    await pool.query(
+      `UPDATE active_drivers SET route_id = $1 WHERE driver_id = $2`,
+      [route_id, driver_id]
+    );
+
+    if (pool.rowCount === 0) {
+      return res.status(404).json({ error: "Driver not found" });
+    }
+
+    res.json({ message: "Driver route updated" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getActiveDrivers,
   updateActiveDriver,
-  getBusIdByDriverId
+  getBusIdByDriverId,
+  updateActiveDriverRoute
 };

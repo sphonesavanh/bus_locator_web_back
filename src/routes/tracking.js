@@ -23,7 +23,7 @@ router.put("/update/:trip_id", async (req, res) => {
 
     const normalized = status.trim().toLowerCase();
     // Set trip end_time when bus reaches final destination
-    if (normalized === 'final_destination') {
+    if (normalized === "final_destination") {
       const endResult = await pool.query(
         `UPDATE trip
          SET end_time = NOW()
@@ -80,7 +80,6 @@ router.get("/:trip_id", async (req, res) => {
        LIMIT 1`,
       [trip_id]
     );
-    
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: `Trip ${trip_id} not found` });
@@ -117,6 +116,32 @@ router.get("/current/:bus_id", async (req, res) => {
     res.status(200).json(rows[0]);
   } catch (err) {
     console.error("Error in GET /current/:bus_id:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all active trips with their latest tracking status
+router.get("/allbus/active", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+        tr.trip_id,
+        tr.route_id,
+        tr.bus_id,
+        t.status,
+        t.timestamp
+      FROM trip tr
+      LEFT JOIN tracking t ON t.trip_id = tr.trip_id
+      WHERE tr.end_time IS NULL
+      AND (t.tracking_id IS NULL OR t.tracking_id IN (
+      SELECT MAX(tracking_id) FROM tracking GROUP BY trip_id
+    ));
+    `
+    );
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in GET /active:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
